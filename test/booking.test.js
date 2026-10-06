@@ -8,6 +8,7 @@ const {
   assignEntryGate,
   formatEntryTime,
 } = require('../server/controllers/bookingController');
+const { getDatabaseConfig, isRailwayEnvironment } = require('../server/config/db');
 
 const validDevotee = {
   fullName: 'Aarav Devotee',
@@ -65,4 +66,47 @@ test('formats slot start as the entry time without changing an existing label', 
   assert.equal(formatEntryTime('10:00', '10:00 AM – 11:00 AM'), '10:00 AM');
   assert.equal(formatEntryTime('14:30', '02:30 PM – 03:30 PM'), '2:30 PM');
   assert.equal(formatEntryTime(undefined, '10:00 AM – 11:00 AM'), '10:00 AM');
+});
+
+test('uses MONGODB_URI and never enables local MongoDB startup in production', () => {
+  const config = getDatabaseConfig({
+    NODE_ENV: 'production',
+    MONGODB_URI: 'mongodb+srv://example.invalid/temple',
+  }, 'linux');
+
+  assert.equal(config.mongoUri, 'mongodb+srv://example.invalid/temple');
+  assert.equal(config.canStartLocalMongo, false);
+
+  const railwayConfig = getDatabaseConfig({
+    RAILWAY_ENVIRONMENT: 'production',
+    MONGODB_URI: 'mongodb+srv://example.invalid/temple',
+  }, 'win32');
+  assert.equal(railwayConfig.mongoUri, 'mongodb+srv://example.invalid/temple');
+  assert.equal(railwayConfig.canStartLocalMongo, false);
+});
+
+test('requires MONGODB_URI on Railway and detects Railway environment variables', () => {
+  assert.equal(isRailwayEnvironment({ RAILWAY_ENVIRONMENT: 'production' }), true);
+  assert.throws(
+    () => getDatabaseConfig({ RAILWAY_PROJECT_ID: 'project-id' }, 'linux'),
+    /MONGODB_URI is required in production/
+  );
+  assert.throws(
+    () => getDatabaseConfig({ RAILWAY_SERVICE_ID: 'service-id', MONGO_URI: 'mongodb://localhost/example' }, 'linux'),
+    /MONGODB_URI is required in production/
+  );
+});
+
+test('keeps the default local database on Windows development only', () => {
+  const localConfig = getDatabaseConfig({ NODE_ENV: 'development' }, 'win32');
+  const linuxConfig = getDatabaseConfig({ NODE_ENV: 'development' }, 'linux');
+  const explicitUriConfig = getDatabaseConfig({
+    NODE_ENV: 'development',
+    MONGODB_URI: 'mongodb://127.0.0.1:27017/custom',
+  }, 'win32');
+
+  assert.equal(localConfig.mongoUri, 'mongodb://127.0.0.1:27017/temple-darshan');
+  assert.equal(localConfig.canStartLocalMongo, true);
+  assert.equal(linuxConfig.canStartLocalMongo, false);
+  assert.equal(explicitUriConfig.canStartLocalMongo, false);
 });

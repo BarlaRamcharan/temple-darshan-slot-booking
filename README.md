@@ -110,7 +110,7 @@ RAZORPAY_KEY_SECRET=
 APP_BASE_URL=http://localhost:3000
 ```
 
-- `MONGODB_URI`: optional MongoDB connection URI; the app defaults to a local MongoDB database.
+- `MONGODB_URI`: MongoDB connection URI. Required in production; local Windows development defaults to `mongodb://127.0.0.1:27017/temple-darshan`.
 - `JWT_SECRET`: required, long random signing secret. Replace the example value.
 - `EMAIL_USER` and `EMAIL_APP_PASSWORD`: required Gmail SMTP credentials.
 - `ADMIN_EMAIL`: optional email address for the administrator account. That address receives the admin role after verifying its email.
@@ -122,7 +122,17 @@ The email OTP endpoint never returns or logs the generated code. It stores only 
 
 ## MongoDB
 
-The app connects to `mongodb://127.0.0.1:27017/temple-darshan` by default. Set `MONGODB_URI` to use another MongoDB deployment. Initial startup seeds the five temples and sample slots.
+The app uses `MONGODB_URI` when provided. Local Windows development without a URI defaults to `mongodb://127.0.0.1:27017/temple-darshan` and may start the local `mongod.exe` if the database is not already running. The app never starts a local MongoDB process on Linux or Railway.
+
+### Railway deployment
+
+1. Create a remote MongoDB database (for example, a MongoDB Atlas cluster) and a database user with access to the Temple Darshan database.
+2. Copy the provider's application connection URI (`mongodb+srv://...` or `mongodb://...`) and select the intended database name. Do not paste the URI into source files, logs, or chat.
+3. In Railway, open the Temple Darshan service, then **Variables**, and add `MONGODB_URI` with the full URI as its value. If the database password contains reserved URL characters, percent-encode them in the URI.
+4. Configure the database provider's network access to allow connections from the Railway service (or use the provider's recommended private networking integration).
+5. Redeploy/restart the service. On startup, the app connects to the configured remote database and seeds the initial temple data if needed. The web server binds to Railway's `PORT` on `0.0.0.0`.
+
+`MONGODB_URI` is required in production. If it is absent or the remote database cannot be reached, startup stops with a configuration/connection error; Railway/Linux will never try to execute `mongod.exe`.
 
 ## Start the application
 

@@ -8,6 +8,9 @@ const OTP_EXPIRY_MS = 5 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const BLOCK_DURATION_MS = 15 * 60 * 1000;
 const MAX_VERIFICATION_ATTEMPTS = 5;
+const SMTP_CONNECTION_TIMEOUT_MS = 10_000;
+const SMTP_GREETING_TIMEOUT_MS = 10_000;
+const SMTP_SOCKET_TIMEOUT_MS = 20_000;
 
 function normalizeEmail(email) {
   return typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -44,6 +47,9 @@ function createTransporter() {
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
+    connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
+    greetingTimeout: SMTP_GREETING_TIMEOUT_MS,
+    socketTimeout: SMTP_SOCKET_TIMEOUT_MS,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_APP_PASSWORD,
@@ -105,28 +111,36 @@ async function sendEmailOtp(req, res) {
   } catch (error) {
     console.error('OTP email delivery failed:', error.code || error.name || 'SMTP_ERROR');
     return res.status(503).json({
-      message: 'Unable to send OTP right now. Please check your email address and try again.',
+      message: 'Failed to send OTP. Please try again.',
     });
   }
 
   const otp = createOtp();
   const nowDate = new Date(now);
 
-  await OTP.findOneAndUpdate(
-    { email },
-    {
-      $set: {
-        email,
-        otpHash: hashOtp(email, otp),
-        expiresAt: new Date(now + OTP_EXPIRY_MS),
-        resendAvailableAt: new Date(now + RESEND_COOLDOWN_MS),
-        blockedUntil: null,
-        attempts: 0,
-        createdAt: nowDate,
+  try {
+    await OTP.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          email,
+          otpHash: hashOtp(email, otp),
+          expiresAt: new Date(now + OTP_EXPIRY_MS),
+          resendAvailableAt: new Date(now + RESEND_COOLDOWN_MS),
+          blockedUntil: null,
+          attempts: 0,
+          createdAt: nowDate,
+        },
       },
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  } catch (error) {
+    transporter.close();
+    console.error('OTP request persistence failed:', error.code || error.name || 'DATABASE_ERROR');
+    return res.status(503).json({
+      message: 'Failed to send OTP. Please try again.',
+    });
+  }
 
   try {
     await transporter.sendMail({
@@ -137,11 +151,17 @@ async function sendEmailOtp(req, res) {
       html: createOtpEmail(otp, email),
     });
   } catch (error) {
-    await OTP.deleteOne({ email });
+    try {
+      await OTP.deleteOne({ email });
+    } catch (cleanupError) {
+      console.error('Failed OTP cleanup:', cleanupError.code || cleanupError.name || 'DATABASE_ERROR');
+    }
     console.error('OTP email delivery failed:', error.code || error.name || 'SMTP_ERROR');
     return res.status(503).json({
-      message: 'Unable to send OTP right now. Please check your email address and try again.',
+      message: 'Failed to send OTP. Please try again.',
     });
+  } finally {
+    transporter.close();
   }
 
   return res.status(200).json({
@@ -255,4 +275,5 @@ module.exports = {
   verifyEmailOtp,
   normalizeEmail,
   isValidEmail,
+  createTransporter,
 };

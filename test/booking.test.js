@@ -9,6 +9,7 @@ const {
   formatEntryTime,
 } = require('../server/controllers/bookingController');
 const { getDatabaseConfig, isRailwayEnvironment } = require('../server/config/db');
+const { createTransporter, sendEmailOtp } = require('../server/controllers/authController');
 
 const validDevotee = {
   fullName: 'Aarav Devotee',
@@ -109,4 +110,45 @@ test('keeps the default local database on Windows development only', () => {
   assert.equal(localConfig.canStartLocalMongo, true);
   assert.equal(linuxConfig.canStartLocalMongo, false);
   assert.equal(explicitUriConfig.canStartLocalMongo, false);
+});
+
+test('configures Gmail SMTP with bounded connection and socket timeouts', () => {
+  const originalEmailUser = process.env.EMAIL_USER;
+  const originalEmailPassword = process.env.EMAIL_APP_PASSWORD;
+  process.env.EMAIL_USER = 'smtp-test@example.invalid';
+  process.env.EMAIL_APP_PASSWORD = 'test-only-password';
+
+  try {
+    const transporter = createTransporter();
+    assert.equal(transporter.options.host, 'smtp.gmail.com');
+    assert.equal(transporter.options.port, 465);
+    assert.equal(transporter.options.secure, true);
+    assert.equal(transporter.options.connectionTimeout, 10_000);
+    assert.equal(transporter.options.greetingTimeout, 10_000);
+    assert.equal(transporter.options.socketTimeout, 20_000);
+    transporter.close();
+  } finally {
+    if (originalEmailUser === undefined) delete process.env.EMAIL_USER;
+    else process.env.EMAIL_USER = originalEmailUser;
+    if (originalEmailPassword === undefined) delete process.env.EMAIL_APP_PASSWORD;
+    else process.env.EMAIL_APP_PASSWORD = originalEmailPassword;
+  }
+});
+
+test('email OTP endpoint responds immediately to invalid email input', async () => {
+  const response = {
+    statusCode: 200,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body) {
+      this.body = body;
+      return this;
+    },
+  };
+
+  await sendEmailOtp({ body: { email: 'not-an-email' } }, response);
+  assert.equal(response.statusCode, 400);
+  assert.match(response.body.message, /valid email address/i);
 });

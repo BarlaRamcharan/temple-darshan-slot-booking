@@ -2,7 +2,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
-const { connectDB } = require('./config/db');
+const { connectDB, isRailwayEnvironment } = require('./config/db');
 const { seedDatabase } = require('./data/seed');
 const authRoutes = require('./routes/authRoutes');
 const templeRoutes = require('./routes/templeRoutes');
@@ -13,6 +13,10 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = '0.0.0.0';
+
+if (isRailwayEnvironment()) {
+  app.set('trust proxy', 1);
+}
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));

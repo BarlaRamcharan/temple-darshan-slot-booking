@@ -118,7 +118,7 @@ APP_BASE_URL=http://localhost:3000
 - `RAZORPAY_KEY_SECRET`: Razorpay Test Mode secret. Used only by the backend; never place it in frontend code or share it.
 - `APP_BASE_URL`: optional public origin used in QR verification links. Use the externally accessible HTTPS origin outside localhost.
 
-The email OTP endpoint never returns or logs the generated code. It stores only an HMAC hash and the expiry/attempt/cooldown metadata.
+The email OTP endpoint never returns or logs the generated code. It stores only an HMAC hash and the expiry/attempt/cooldown metadata. Gmail SMTP uses bounded connection, greeting, and socket timeouts so a stalled provider returns an error instead of leaving the login request open indefinitely.
 
 ## MongoDB
 
@@ -130,7 +130,7 @@ The app uses `MONGODB_URI` when provided. Local Windows development without a UR
 2. Copy the provider's application connection URI (`mongodb+srv://...` or `mongodb://...`) and select the intended database name. Do not paste the URI into source files, logs, or chat.
 3. In Railway, open the Temple Darshan service, then **Variables**, and add `MONGODB_URI` with the full URI as its value. If the database password contains reserved URL characters, percent-encode them in the URI.
 4. Configure the database provider's network access to allow connections from the Railway service (or use the provider's recommended private networking integration).
-5. Redeploy/restart the service. On startup, the app connects to the configured remote database and seeds the initial temple data if needed. The web server binds to Railway's `PORT` on `0.0.0.0`.
+5. Redeploy/restart the service. On startup, the app connects to the configured remote database and seeds the initial temple data if needed. The web server binds to Railway's `PORT` on `0.0.0.0` and trusts one Railway proxy hop so client IP-based rate limits continue to work.
 
 `MONGODB_URI` is required in production. If it is absent or the remote database cannot be reached, startup stops with a configuration/connection error; Railway/Linux will never try to execute `mongod.exe`.
 

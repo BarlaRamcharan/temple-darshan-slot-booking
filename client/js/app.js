@@ -221,19 +221,22 @@ async function requestEmailOtp(email, isResend) {
   if (!isResend) {
     button.textContent = 'Sending…';
   }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
   try {
     const response = await fetch(`${API_BASE}/auth/send-email-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
+      signal: controller.signal,
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       if (data.retryAfterSeconds) {
         startOtpCountdown(data.retryAfterSeconds);
       }
-      throw new Error(data.message || 'Unable to send OTP right now. Please check your email address and try again.');
+      throw new Error(data.message || 'Failed to send OTP. Please try again.');
     }
 
     state.otpEmail = email;
@@ -243,10 +246,13 @@ async function requestEmailOtp(email, isResend) {
     startOtpCountdown(data.resendAfterSeconds || 60);
     setMessage('success', data.message);
   } catch (error) {
-    setMessage('error', error.message === 'Failed to fetch' || error.message === 'fetch failed'
-      ? 'Unable to send OTP right now. Please check your email address and try again.'
-      : error.message);
+    setMessage('error', error.name === 'AbortError'
+      ? 'Failed to send OTP. Please try again.'
+      : error.message === 'Failed to fetch' || error.message === 'fetch failed'
+        ? 'Failed to send OTP. Please try again.'
+        : error.message);
   } finally {
+    clearTimeout(timeoutId);
     if (!isResend) {
       button.disabled = false;
       button.textContent = buttonLabel;

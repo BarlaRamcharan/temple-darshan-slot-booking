@@ -8,6 +8,8 @@ const OTP_EXPIRY_MS = 5 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const BLOCK_DURATION_MS = 15 * 60 * 1000;
 const MAX_VERIFICATION_ATTEMPTS = 5;
+const SMTP_HOST = 'smtp.gmail.com';
+const SMTP_PORT = 465;
 const SMTP_CONNECTION_TIMEOUT_MS = 10_000;
 const SMTP_GREETING_TIMEOUT_MS = 10_000;
 const SMTP_SOCKET_TIMEOUT_MS = 20_000;
@@ -39,13 +41,21 @@ function createOtp() {
 }
 
 function createTransporter() {
+  console.info('SMTP configuration:', {
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: true,
+    EMAIL_USER: Boolean(process.env.EMAIL_USER),
+    EMAIL_APP_PASSWORD: Boolean(process.env.EMAIL_APP_PASSWORD),
+  });
+
   if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
     throw new Error('Gmail SMTP credentials are not configured.');
   }
 
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
+    host: SMTP_HOST,
+    port: SMTP_PORT,
     secure: true,
     connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
     greetingTimeout: SMTP_GREETING_TIMEOUT_MS,

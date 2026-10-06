@@ -118,7 +118,7 @@ APP_BASE_URL=http://localhost:3000
 - `RAZORPAY_KEY_SECRET`: Razorpay Test Mode secret. Used only by the backend; never place it in frontend code or share it.
 - `APP_BASE_URL`: optional public origin used in QR verification links. Use the externally accessible HTTPS origin outside localhost.
 
-The email OTP endpoint never returns or logs the generated code. It stores only an HMAC hash and the expiry/attempt/cooldown metadata. Gmail SMTP uses bounded connection, greeting, and socket timeouts so a stalled provider returns an error instead of leaving the login request open indefinitely.
+The email OTP endpoint never returns or logs the generated code. It stores only an HMAC hash and the expiry/attempt/cooldown metadata. Gmail SMTP connects to `smtp.gmail.com` on port `465` with implicit TLS (`secure: true`), using bounded connection (10 seconds), greeting (10 seconds), and socket (20 seconds) timeouts. On transporter creation, the backend logs only the SMTP host, port, TLS flag, and booleans indicating whether `EMAIL_USER` and `EMAIL_APP_PASSWORD` are configured; it never logs their values. These settings bound stalled requests but do not guarantee provider connectivity or email delivery.
 
 ## MongoDB
 

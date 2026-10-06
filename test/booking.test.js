@@ -115,8 +115,13 @@ test('keeps the default local database on Windows development only', () => {
 test('configures Gmail SMTP with bounded connection and socket timeouts', () => {
   const originalEmailUser = process.env.EMAIL_USER;
   const originalEmailPassword = process.env.EMAIL_APP_PASSWORD;
+  const originalConsoleInfo = console.info;
+  let smtpDiagnostic;
   process.env.EMAIL_USER = 'smtp-test@example.invalid';
   process.env.EMAIL_APP_PASSWORD = 'test-only-password';
+  console.info = (message, config) => {
+    if (message === 'SMTP configuration:') smtpDiagnostic = config;
+  };
 
   try {
     const transporter = createTransporter();
@@ -126,8 +131,16 @@ test('configures Gmail SMTP with bounded connection and socket timeouts', () => 
     assert.equal(transporter.options.connectionTimeout, 10_000);
     assert.equal(transporter.options.greetingTimeout, 10_000);
     assert.equal(transporter.options.socketTimeout, 20_000);
+    assert.deepEqual(smtpDiagnostic, {
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      EMAIL_USER: true,
+      EMAIL_APP_PASSWORD: true,
+    });
     transporter.close();
   } finally {
+    console.info = originalConsoleInfo;
     if (originalEmailUser === undefined) delete process.env.EMAIL_USER;
     else process.env.EMAIL_USER = originalEmailUser;
     if (originalEmailPassword === undefined) delete process.env.EMAIL_APP_PASSWORD;

@@ -1,0 +1,68 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const {
+  normalizeAndValidateDevotees,
+  calculateAmount,
+  verifyRazorpaySignature,
+  assignEntryGate,
+  formatEntryTime,
+} = require('../server/controllers/bookingController');
+
+const validDevotee = {
+  fullName: 'Aarav Devotee',
+  age: 32,
+  gender: 'Other',
+  mobileNumber: '9876543210',
+};
+
+test('validates and normalizes each devotee record', () => {
+  const result = normalizeAndValidateDevotees([
+    { ...validDevotee, fullName: '  Aarav Devotee  ' },
+    { ...validDevotee, fullName: 'Meera Devotee', age: '12', gender: 'Female' },
+  ]);
+
+  assert.equal(result.error, undefined);
+  assert.equal(result.devotees.length, 2);
+  assert.equal(result.devotees[0].fullName, 'Aarav Devotee');
+  assert.equal(result.devotees[1].age, 12);
+});
+
+test('rejects missing and invalid devotee details', () => {
+  assert.match(normalizeAndValidateDevotees([]).error, /1 to 12 devotees/);
+  assert.match(normalizeAndValidateDevotees([{ ...validDevotee, age: 121 }]).error, /age/);
+  assert.match(normalizeAndValidateDevotees([{ ...validDevotee, mobileNumber: '0000000000' }]).error, /mobile/);
+  assert.match(normalizeAndValidateDevotees([{ ...validDevotee, gender: 'unknown' }]).error, /gender/);
+});
+
+test('calculates fixed INR pricing on the server', () => {
+  assert.equal(calculateAmount(1), 100);
+  assert.equal(calculateAmount(2), 200);
+  assert.equal(calculateAmount(12), 1200);
+  assert.throws(() => calculateAmount(0), RangeError);
+  assert.throws(() => calculateAmount(13), RangeError);
+});
+
+test('validates Razorpay HMAC signature without timing-sensitive comparison', () => {
+  const orderId = 'order_test_123';
+  const paymentId = 'pay_test_456';
+  const secret = 'test-only-signing-key';
+  const signature = crypto.createHmac('sha256', secret).update(`${orderId}|${paymentId}`).digest('hex');
+
+  assert.equal(verifyRazorpaySignature(orderId, paymentId, signature, secret), true);
+  assert.equal(verifyRazorpaySignature(orderId, paymentId, `${signature.slice(0, -2)}00`, secret), false);
+  assert.equal(verifyRazorpaySignature(orderId, paymentId, 'not-a-signature', secret), false);
+});
+
+test('assigns the same supported entry gate for the same temple and slot', () => {
+  const firstAssignment = assignEntryGate('temple-1', 'slot-10am');
+  assert.equal(assignEntryGate('temple-1', 'slot-10am'), firstAssignment);
+  assert.ok(['Gate 1', 'Gate 2', 'Gate 3'].includes(firstAssignment));
+  assert.ok(['Gate 1', 'Gate 2', 'Gate 3'].includes(assignEntryGate('temple-2', 'slot-11am')));
+});
+
+test('formats slot start as the entry time without changing an existing label', () => {
+  assert.equal(formatEntryTime('10:00', '10:00 AM – 11:00 AM'), '10:00 AM');
+  assert.equal(formatEntryTime('14:30', '02:30 PM – 03:30 PM'), '2:30 PM');
+  assert.equal(formatEntryTime(undefined, '10:00 AM – 11:00 AM'), '10:00 AM');
+});

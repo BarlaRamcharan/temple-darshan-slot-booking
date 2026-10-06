@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temple Darshan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <div class="brand-icon">ॐ</div>
+          <div>
+            <div class="brand-name">Temple Darshan</div>
+            <div class="brand-tag">Book your Darshan. Skip the waiting.</div>
+          </div>
+        </div>
+        <nav class="top-actions">
+          <button id="homeNavBtn" class="nav-btn">Home</button>
+          <button id="bookingsNavBtn" class="nav-btn">My Bookings</button>
+          <button id="adminNavBtn" class="nav-btn admin-btn hidden">Admin</button>
+          <button id="logoutBtn" class="nav-btn danger-btn hidden">Logout</button>
+        </nav>
+      </header>
+
+      <main class="app-main">
+        <section id="loginScreen" class="screen active">
+          <div class="auth-card">
+            <div class="auth-header">
+              <p class="eyebrow">Secure email access</p>
+              <h1>Temple Darshan</h1>
+              <p class="sub-copy">Book your Darshan. Skip the waiting.</p>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+              <label class="input-label" for="emailInput">Email Address</label>
+              <input id="emailInput" type="email" maxlength="254" autocomplete="email" placeholder="Enter your email" required />
+              <button id="sendOtpBtn" type="submit" class="primary-btn">Send OTP</button>
+            </form>
+
+            <div id="otpSection" class="otp-section hidden">
+              <h2>Verify your email</h2>
+              <p class="otp-email-copy">We sent a 6-digit verification code to <strong id="sentEmail"></strong>.</p>
+              <label class="input-label" for="otpInput">OTP</label>
+              <div class="otp-box-row">
+                <input id="otpInput" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="_ _ _ _ _ _" aria-label="6-digit verification code" />
+                <button id="verifyOtpBtn" class="primary-btn" type="button">Verify &amp; Continue</button>
+              </div>
+              <div class="otp-meta-row">
+                <span id="otpMessage">This code is valid for 5 minutes.</span>
+                <span id="otpCountdown" class="countdown"></span>
+              </div>
+              <div class="otp-actions">
+                <button id="resendOtpBtn" class="link-btn" type="button" disabled>Resend OTP</button>
+                <button id="editEmailBtn" class="link-btn" type="button">Edit email</button>
+              </div>
+            </div>
+
+            <div id="loginError" class="message error hidden"></div>
+            <div id="loginSuccess" class="message success hidden"></div>
+          </div>
+        </section>
+
+        <section id="homeScreen" class="screen">
+          <div class="screen-header-row">
+            <div>
+              <p class="eyebrow">Your spiritual journey</p>
+              <h2>Choose Your Temple</h2>
+            </div>
+            <div id="homeUserBadge" class="user-chip"></div>
+          </div>
+          <div id="templeGrid" class="temple-grid"></div>
+        </section>
+
+        <section id="bookingScreen" class="screen">
+          <div id="bookingHeader" class="booking-header"></div>
+          <div class="progress-wrap">
+            <div id="bookingProgress" class="booking-progress"></div>
+          </div>
+          <div id="bookingContent" class="booking-content"></div>
+        </section>
+
+        <section id="myBookingsScreen" class="screen">
+          <div class="screen-header-row compact">
+            <div>
+              <p class="eyebrow">Your bookings</p>
+              <h2>My Bookings</h2>
+            </div>
+          </div>
+          <div id="bookingTabs" class="booking-tabs">
+            <button class="tab-btn active" data-tab="upcoming">Upcoming</button>
+            <button class="tab-btn" data-tab="completed">Completed</button>
+            <button class="tab-btn" data-tab="cancelled">Cancelled</button>
+          </div>
+          <div id="bookingsList" class="bookings-list"></div>
+        </section>
+
+        <section id="adminScreen" class="screen">
+          <div class="screen-header-row compact">
+            <div>
+              <p class="eyebrow">Operations</p>
+              <h2>Admin Dashboard</h2>
+            </div>
+          </div>
+          <div id="adminStats" class="stats-grid"></div>
+          <div class="admin-layout">
+            <div class="panel">
+              <h3>Add a Temple</h3>
+              <form id="addTempleForm" class="stacked-form">
+                <input name="name" placeholder="Temple name" required />
+                <input name="location" placeholder="Location" required />
+                <textarea name="description" placeholder="Description" required></textarea>
+                <input name="image" placeholder="Image URL" required />
+                <button type="submit" class="primary-btn">Add Temple</button>
+              </form>
+            </div>
+            <div class="panel">
+              <h3>Create Time Slot</h3>
+              <form id="addSlotForm" class="stacked-form">
+                <select id="slotTempleSelect" name="templeId" required></select>
+                <input name="date" type="date" required />
+                <input name="timeLabel" placeholder="10:00 AM – 11:00 AM" required />
+                <div class="input-row">
+                  <input name="timeStart" placeholder="10:00" required />
+                  <input name="timeEnd" placeholder="11:00" required />
+                </div>
+                <input name="capacity" type="number" min="1" placeholder="Capacity" required />
+                <button type="submit" class="primary-btn">Create Slot</button>
+              </form>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header-row">
+              <h3>Bookings</h3>
+              <input id="bookingSearch" type="search" placeholder="Search bookings" />
+            </div>
+            <div id="adminBookings" class="table-wrap"></div>
+          </div>
+        </section>
+
+        <section id="passScreen" class="screen">
+          <div id="passCard" class="pass-card-wrap"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>

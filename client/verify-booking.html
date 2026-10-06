@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Darshan Entry Pass</title>
+    <style>
+      :root { color-scheme: light; font-family: Arial, sans-serif; color: #291016; background: #fff7ee; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 28px 16px; background: radial-gradient(circle at top, #fffdf8, #fff2df 70%); }
+      main { max-width: 850px; margin: 3vh auto; overflow: hidden; background: #fffdfa; border: 1px solid #ead9c0; border-top: 8px solid #d7a74a; border-radius: 24px; box-shadow: 0 18px 48px #4b0d1c18; }
+      header { padding: 26px 32px 20px; border-bottom: 1px solid #eadfce; }
+      .brand { margin: 0 0 7px; color: #b7772e; font-size: .78rem; font-weight: 800; letter-spacing: .15em; }
+      h1 { margin: 0; color: #4b0d1c; font-size: clamp(1.5rem, 4vw, 2.15rem); }
+      .temple-heading { margin: 22px 0 5px; color: #4b0d1c; font-size: 1.45rem; }
+      .location { margin: 0; color: #75666b; }
+      .content { padding: 26px 32px 32px; }
+      .status { margin: 0 0 10px; color: #18794e; font-weight: 800; letter-spacing: .08em; }
+      .message { margin: 0 0 24px; color: #6d5f66; }
+      .details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 22px; }
+      .detail { padding: 13px 15px; background: #fff8ee; border: 1px solid #f0e3d0; border-radius: 13px; }
+      dt { margin-bottom: 6px; color: #75666b; text-transform: uppercase; font-size: .7rem; letter-spacing: .08em; }
+      dd { margin: 0; color: #4b0d1c; font-weight: 700; overflow-wrap: anywhere; }
+      .devotee-card { grid-column: 1 / -1; }
+      #devotees { margin: 0; padding-left: 22px; line-height: 1.8; }
+      .gate-card { display: grid; grid-template-columns: minmax(220px, .9fr) 1.1fr; align-items: center; gap: 24px; margin: 24px 0; padding: 22px; color: #fffdfa; background: linear-gradient(135deg, #4b0d1c, #6a1828); border: 1px solid #b7772e; border-radius: 20px; }
+      .gate-kicker { margin: 0 0 8px; color: #f5d99f; font-size: .78rem; font-weight: 800; letter-spacing: .14em; }
+      .gate-name { margin: 0; color: #fff; font-size: clamp(2rem, 7vw, 3.3rem); line-height: 1; }
+      .gate-caption { margin: 12px 0 0; color: #f8e9d0; }
+      .gate-visual { display: grid; place-items: end center; min-height: 150px; padding-top: 18px; border-bottom: 7px solid #d7a74a; background: linear-gradient(#6a1828, #4b0d1c); }
+      .gate-arch { position: relative; width: min(190px, 75%); height: 112px; border: 12px solid #d7a74a; border-bottom: 0; border-radius: 100px 100px 0 0; background: #fff2d8; box-shadow: inset 0 0 0 5px #b7772e; }
+      .gate-arch::before, .gate-arch::after { position: absolute; bottom: 0; width: 10px; height: 76px; background: #4b0d1c; content: ''; }
+      .gate-arch::before { left: 28%; }
+      .gate-arch::after { right: 28%; }
+      .status-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+      .status-chip { padding: 10px 13px; color: #176b48; background: #eaf7ef; border: 1px solid #c4e8d1; border-radius: 999px; font-size: .8rem; font-weight: 800; }
+      .error { color: #a52b32; }
+      .error-state { color: #a52b32; }
+      .error-state .status-chip { color: #a52b32; background: #fff0ed; border-color: #f1c8c1; }
+      @media (max-width: 600px) { header, .content { padding-left: 20px; padding-right: 20px; } .details, .gate-card { grid-template-columns: 1fr; } .gate-visual { min-height: 130px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="brand">🛕 TEMPLE DARSHAN</p>
+        <h1>DIGITAL DARSHAN ENTRY PASS</h1>
+        <h2 id="temple" class="temple-heading">Verifying your pass…</h2>
+        <p id="location" class="location"></p>
+      </header>
+      <section id="passContent" class="content">
+        <p id="status" class="status">VERIFYING QR CODE…</p>
+        <p id="message" class="message">Checking this pass with Temple Darshan.</p>
+        <div id="passDetails" hidden>
+          <dl class="details">
+            <div class="detail"><dt>Booking ID</dt><dd id="bookingId"></dd></div>
+            <div class="detail"><dt>Darshan date</dt><dd id="date"></dd></div>
+            <div class="detail"><dt>Darshan slot</dt><dd id="time"></dd></div>
+            <div class="detail"><dt>Entry time</dt><dd id="entryTime"></dd></div>
+            <div class="detail"><dt>Number of devotees</dt><dd id="count"></dd></div>
+            <div class="detail"><dt>Payment</dt><dd id="payment"></dd></div>
+            <div class="detail"><dt>Booking</dt><dd id="bookingStatus"></dd></div>
+            <div class="detail devotee-card"><dt>Devotees</dt><dd><ol id="devotees"></ol></dd></div>
+          </dl>
+          <section class="gate-card" aria-labelledby="gateName">
+            <div>
+              <p class="gate-kicker">🚪 YOUR ENTRY GATE</p>
+              <h2 id="gateName" class="gate-name"></h2>
+              <p class="gate-caption">Please proceed to this gate for your selected darshan slot.</p>
+            </div>
+            <div class="gate-visual" role="img" aria-label="Illustrative entry gate">
+              <div class="gate-arch" aria-hidden="true"></div>
+            </div>
+          </section>
+          <div class="status-list" aria-label="Pass verification status">
+            <span class="status-chip">✓ PAYMENT VERIFIED</span>
+            <span class="status-chip">✓ BOOKING CONFIRMED</span>
+            <span id="qrStatus" class="status-chip">✓ QR VERIFIED</span>
+            <span class="status-chip">✓ VALID ENTRY PASS</span>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script>
+      const token = window.location.pathname.split('/').filter(Boolean).pop();
+      const fields = ['bookingId', 'date', 'time', 'entryTime', 'paymentStatus', 'bookingStatus'];
+      const message = document.getElementById('message');
+      const status = document.getElementById('status');
+      const passContent = document.getElementById('passContent');
+
+      fetch(`/api/bookings/verify/${encodeURIComponent(token || '')}`)
+        .then(async (response) => {
+          const body = await response.json();
+          if (!response.ok) throw new Error(body.message || 'This booking could not be verified.');
+          fields.forEach((field) => {
+            const targetId = field === 'paymentStatus' ? 'payment' : field === 'bookingStatus' ? 'bookingStatus' : field;
+            const value = body[field];
+            if (field === 'date' && value) {
+              document.getElementById(targetId).textContent = new Date(`${value}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+            } else {
+              document.getElementById(targetId).textContent = value || '-';
+            }
+          });
+          document.getElementById('temple').textContent = body.temple || 'Temple Darshan';
+          document.getElementById('location').textContent = body.location || '';
+          document.getElementById('gateName').textContent = body.entryGate || '-';
+          document.querySelector('.gate-visual').setAttribute('aria-label', `Illustrative ${body.entryGate || 'entry'} gate`);
+          document.getElementById('count').textContent = String(body.numberOfDevotees || 0);
+          (body.devotees || []).forEach((name) => {
+            const item = document.createElement('li');
+            item.textContent = name;
+            document.getElementById('devotees').appendChild(item);
+          });
+          document.getElementById('passDetails').hidden = false;
+          status.textContent = '✓ QR VERIFIED · VALID ENTRY PASS';
+          message.textContent = 'Payment and booking are verified. Present this pass at the assigned entry gate.';
+        })
+        .catch((error) => {
+          passContent.classList.add('error-state');
+          status.textContent = '✕ INVALID / UNVERIFIED PASS';
+          message.textContent = 'This QR code does not match a valid paid and confirmed booking.';
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/index.js": {
+      "includeFiles": ["client/**", "assets/**"]
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.js"
+    }
+  ]
+}

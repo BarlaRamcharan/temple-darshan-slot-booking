@@ -11,8 +11,8 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
 const HOST = '0.0.0.0';
+let initializationPromise;
 
 if (isRailwayEnvironment()) {
   app.set('trust proxy', 1);
@@ -59,16 +59,31 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ message: 'The request could not be completed. Please try again.' });
 });
 
-async function startServer() {
-  await connectDB();
-  await seedDatabase();
+function initializeApp() {
+  if (!initializationPromise) {
+    initializationPromise = connectDB()
+      .then(seedDatabase)
+      .catch((error) => {
+        initializationPromise = undefined;
+        throw error;
+      });
+  }
+  return initializationPromise;
+}
 
-  app.listen(PORT, HOST, () => {
-    console.log(`Temple Darshan server running on ${HOST}:${PORT}`);
+async function startServer() {
+  await initializeApp();
+  const port = Number(process.env.PORT) || 3000;
+  app.listen(port, HOST, () => {
+    console.log(`Temple Darshan server running on ${HOST}:${port}`);
   });
 }
 
-startServer().catch((error) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, initializeApp, startServer };

@@ -1,6 +1,9 @@
 # Temple Darshan Slot Booking System
 
 Temple Darshan is a full-stack temple booking platform built with HTML, CSS, JavaScript, Node.js, Express.js, and MongoDB. Devotees sign in with a one-time verification code delivered to their email using Gmail SMTP, browse five temples, select a date and darshan slot, confirm a booking, and view a QR-coded digital pass.
+## Live Demo
+
+[Open Temple Darshan Slot Booking](https://temple-darshan-slot-booking.vercel.app/)
 
 ## Features
 
